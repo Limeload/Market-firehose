@@ -1,256 +1,89 @@
 # Financial Analysis & Automation
 
-A real-time financial news intelligence platform. Ingests articles from multiple sources, enriches them with LLM-extracted metadata, performs per-company sentiment analysis and event classification, and delivers everything via REST or live WebSocket stream.
+Ingests financial news, enriches it with LLM-extracted metadata, and delivers sentiment analysis + event classification via REST and WebSocket.
 
----
+## Stack
 
-## Architecture
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│  Ingestion Layer              Processing Layer                        │
-│                                                                       │
-│  TheNewsAPI ──┐                                                       │
-│  RSS feeds  ──┼──► Kafka (raw-articles) ──► Enrichment (LLM)        │
-│  (add more) ──┘         │                      │                     │
-│                          │               ┌──────┴──────┐             │
-│                          │               ▼             ▼             │
-│                       Storage Layer   PostgreSQL     Redis pub/sub   │
-│                                          │             │             │
-│                          ┌───────────────┘             │             │
-│                          ▼                             │             │
-│  Analysis Layer   Kafka (processed-articles)           │             │
-│                          │                             │             │
-│                          ▼                             ▼             │
-│                   Market Analysis (LLM) ──► Redis (article-analyses) │
-│                   Companies + Sentiment                │             │
-│                   Event Classification                 │             │
-│                                                        │             │
-│  API Layer     REST /articles  /analysis  /stocks   WS /stream      │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-Data flows through 4 independently scalable layers:
-
-1. **Ingestion** — async feed adapters push raw articles to Kafka. Adding a source = one new adapter class.
-2. **Processing** — Kafka consumers call an LLM to extract summary, sector, and tags. Structured events written to PostgreSQL + Redis.
-3. **Analysis** — second LLM pass per article: identifies mentioned companies, scores sentiment (−1 to +1), and classifies 18 event types. Runs concurrently at scale with prompt caching.
-4. **API** — FastAPI exposes REST, a stock screener + NL search, and two real-time WebSocket streams.
-
----
-
-## Tech Stack
-
-| Concern | Choice |
-|---|---|
-| Message queue | Apache Kafka (KRaft, via Bitnami) |
-| API framework | FastAPI + Pydantic v2 |
-| Primary database | PostgreSQL 16 |
-| Real-time cache | Redis 7 pub/sub |
-| LLM | Anthropic Claude (primary) / OpenAI GPT-4 (fallback) |
-| News feeds | TheNewsAPI + RSS |
-| Stock data | Yahoo Finance (yfinance) + NASDAQ screener |
-| Async runtime | asyncio / aiohttp / aiokafka |
-| Containerization | Docker + Compose |
-| Migrations | Alembic |
-| Testing | pytest + Locust |
-
----
+Kafka · FastAPI · PostgreSQL · Redis · Claude (Anthropic) · Docker
 
 ## Getting Started
 
-### Prerequisites
-
-- Docker & Docker Compose
-- Python 3.12+
-- A [TheNewsAPI](https://www.thenewsapi.com/) token (free tier works)
-- An [Anthropic API key](https://console.anthropic.com/)
-
-### 1. Clone and configure
+**Prerequisites:** Docker, Python 3.12+, TheNewsAPI token, Anthropic API key
 
 ```bash
 git clone https://github.com/your-org/financial-analysis-automation.git
 cd financial-analysis-automation
-cp .env.example .env
-# Edit .env — fill in THENEWSAPI_KEY and ANTHROPIC_API_KEY at minimum
+cp .env.example .env   # fill in THENEWSAPI_KEY and ANTHROPIC_API_KEY
+make up                # start Kafka, Redis, Postgres
+make install && make migrate
+docker compose up      # or run services individually (see below)
 ```
 
-### 2. Start infrastructure
+**Verify:** `curl http://localhost:8000/health` · Swagger: `http://localhost:8000/docs`
+
+### Running services individually
 
 ```bash
-make up
-# or: docker compose up -d postgres redis kafka
-```
-
-### 3. Run database migrations
-
-```bash
-make install
-make migrate
-```
-
-### 4. Start services
-
-```bash
-# All services via Docker:
-docker compose up
-
-# Or individually for local development:
 make dev          # API on :8000
 make run-ingest   # ingestion workers
 make run-process  # LLM processor
 make run-analysis # market analysis
 ```
 
-### 5. Verify
+## Key Environment Variables
 
-```bash
-curl http://localhost:8000/health
-# Open http://localhost:8000/docs for the full Swagger UI
-```
+| Variable | Description |
+|---|---|
+| `THENEWSAPI_KEY` | TheNewsAPI token (required) |
+| `ANTHROPIC_API_KEY` | Anthropic API key (required) |
+| `DATABASE_URL` | Async PostgreSQL DSN |
+| `REDIS_URL` | Redis URL |
+| `KAFKA_BOOTSTRAP_SERVERS` | Kafka brokers |
+| `API_KEYS` | Comma-separated valid API keys |
+| `LLM_MODEL` | Model ID (default: `claude-sonnet-4-6`) |
 
----
+See [.env.example](.env.example) for all options.
 
-## API Reference
+## API Endpoints
 
-All endpoints except `/health` require the `X-API-Key` header.
+All endpoints except `/health` require `X-API-Key`.
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/health` | Dependency health check |
-| `POST` | `/articles` | Manually ingest an article |
-| `GET` | `/articles` | List / filter articles |
-| `GET` | `/articles/{id}` | Get article by ID |
+| `GET` | `/health` | Health check |
+| `POST/GET` | `/articles` | Ingest or list articles |
 | `WS` | `/subscribe` | Real-time article stream |
-| `GET` | `/analysis/articles/{id}` | Event type + per-company sentiment |
-| `GET` | `/analysis/companies/{ticker}/sentiment` | Sentiment feed for a ticker |
-| `GET` | `/analysis/companies/{ticker}/summary` | Aggregated sentiment score |
+| `GET` | `/analysis/articles/{id}` | Event type + sentiment |
+| `GET` | `/analysis/companies/{ticker}/sentiment` | Sentiment feed |
 | `GET` | `/analysis/events` | Browse events by type |
 | `WS` | `/analysis/stream` | Live analysis stream |
 | `GET` | `/stocks/search?q=...` | Natural-language stock search |
-| `GET` | `/stocks` | Metric-based stock screener |
 | `GET` | `/stocks/{ticker}` | Stock detail + metrics |
-| `POST` | `/stocks/refresh` | Trigger NYSE universe refresh |
-
-**Swagger UI:** `http://localhost:8000/docs`
-**ReDoc:** `http://localhost:8000/redoc`
-
----
 
 ## Adding a Feed Source
-
-Create a subclass of `FeedAdapter` and register it in the runner — that's all:
 
 ```python
 # src/ingestion/my_source.py
 from src.ingestion.base import FeedAdapter
-from src.models.schemas import RawArticle
 
 class MySourceAdapter(FeedAdapter):
     source_name = "my-source"
 
     async def fetch(self) -> list[RawArticle]:
-        ...  # fetch and return articles
+        ...
 ```
 
-```python
-# src/ingestion/runner.py  — add one line
-from src.ingestion.my_source import MySourceAdapter
-adapters = [..., MySourceAdapter()]
-```
-
----
-
-## Configuration
-
-All config is via environment variables. See [.env.example](.env.example).
-
-| Variable | Default | Description |
-|---|---|---|
-| `DATABASE_URL` | `postgresql+asyncpg://...` | Async PostgreSQL DSN |
-| `REDIS_URL` | `redis://localhost:6379` | Redis URL |
-| `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9094` | Kafka brokers |
-| `THENEWSAPI_KEY` | — | TheNewsAPI token |
-| `ANTHROPIC_API_KEY` | — | Anthropic API key |
-| `LLM_PROVIDER` | `anthropic` | `anthropic` or `openai` |
-| `LLM_MODEL` | `claude-sonnet-4-6` | Model ID |
-| `API_KEYS` | `dev-secret-key-1` | Comma-separated valid API keys |
-| `ANALYSIS_CONCURRENCY` | `20` | Concurrent LLM calls per analysis worker |
-
----
+Then add it to `adapters = [..., MySourceAdapter()]` in `src/ingestion/runner.py`.
 
 ## Development
 
 ```bash
-make install    # pip install -r requirements.txt
+make install    # install dependencies
 make test       # pytest
 make lint       # ruff check
-make up         # start infra (Kafka, Redis, Postgres)
-make migrate    # alembic upgrade head
-make dev        # uvicorn with --reload
+make load-test  # locust load test
 ```
-
-### Load testing
-
-```bash
-make load-test
-# locust -f tests/locustfile.py --host http://localhost:8000 \
-#        --users 20 --spawn-rate 5 --run-time 2m --headless
-```
-
-### Project structure
-
-```
-src/
-├── config.py               # Pydantic-settings
-├── models/
-│   ├── article.py          # SQLAlchemy ORM — articles, tags, api_keys
-│   ├── analysis.py         # SQLAlchemy ORM — analyses, company sentiments
-│   ├── stock.py            # SQLAlchemy ORM — stocks, metrics
-│   └── schemas.py          # Pydantic v2 request/response schemas
-├── ingestion/
-│   ├── base.py             # FeedAdapter ABC
-│   ├── thenewsapi.py       # TheNewsAPI adapter
-│   ├── rss.py              # Generic RSS/Atom adapter
-│   ├── kafka_producer.py   # aiokafka producer wrapper
-│   └── runner.py           # Ingestion service entry point
-├── processing/
-│   ├── prompts.py          # Article enrichment prompt
-│   ├── llm_parser.py       # Enrichment LLM wrapper
-│   └── consumer.py         # Kafka consumer → enrichment → DB + Redis
-├── analysis/
-│   ├── prompts.py          # Market analysis prompt (prompt-cached)
-│   ├── processor.py        # Analysis LLM wrapper (semaphore + retry)
-│   ├── store.py            # Persist analysis + publish to Redis
-│   └── consumer.py         # High-throughput Kafka consumer
-├── research/
-│   ├── fetcher.py          # NASDAQ screener + yfinance enrichment
-│   ├── nl_search.py        # NL query → Claude → stock results
-│   ├── screener.py         # Metric-based DB screener
-│   └── runner.py           # Universe + metrics refresh service
-└── api/
-    ├── main.py             # FastAPI app
-    ├── dependencies.py     # API key auth
-    └── routers/
-        ├── articles.py     # /articles
-        ├── websocket.py    # WS /subscribe
-        ├── analysis.py     # /analysis
-        └── stocks.py       # /stocks
-```
-
----
-
-## Contributing
-
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feat/my-feature`)
-3. Make your changes and add tests
-4. Open a pull request
-
----
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT
