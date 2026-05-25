@@ -99,6 +99,26 @@ services:
         condition: service_healthy
     command: python -m src.processing.consumer
 
+  analysis:
+    build:
+      context: .
+      target: worker
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://firehose:firehose@postgres:5432/firehose
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    deploy:
+      replicas: 2          # scale here to handle higher article volume
+    command: python -m src.analysis.consumer
+
   research:
     build:
       context: .

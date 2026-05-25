@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routers import articles, websocket, stocks
+from src.api.routers import articles, websocket, stocks, analysis
 from src.config import settings
 from src.models.schemas import HealthResponse
 
@@ -44,6 +44,14 @@ _TAGS = [
         "description": "WebSocket endpoint for live article streaming via Redis pub/sub.",
     },
     {
+        "name": "analysis",
+        "description": (
+            "Market intelligence extracted from articles in near-real-time. "
+            "Per-article: event classification + per-company sentiment scored −1 to +1. "
+            "Endpoints: article analysis, company sentiment feed, aggregated summary, event browser, live WebSocket stream."
+        ),
+    },
+    {
         "name": "stocks",
         "description": (
             "Research automation — natural-language stock search powered by Claude, "
@@ -78,6 +86,7 @@ app.add_middleware(
 app.include_router(articles.router)
 app.include_router(websocket.router)
 app.include_router(stocks.router)
+app.include_router(analysis.router)
 
 
 @app.get(

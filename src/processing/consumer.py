@@ -4,7 +4,7 @@ import json
 import logging
 import sys
 
-from aiokafka import AIOKafkaConsumer
+from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 
 from src.config import settings
 from src.models.schemas import RawArticle
@@ -22,6 +22,13 @@ async def main() -> None:
     publisher = RedisPublisher()
     await publisher.connect()
 
+    # Forward processed articles downstream for analysis
+    producer = AIOKafkaProducer(
+        bootstrap_servers=settings.kafka_bootstrap_servers,
+        value_serializer=lambda v: json.dumps(v).encode(),
+    )
+    await producer.start()
+
     consumer = AIOKafkaConsumer(
         settings.kafka_topic_raw,
         bootstrap_servers=settings.kafka_bootstrap_servers,
@@ -34,13 +41,19 @@ async def main() -> None:
 
     try:
         async for msg in consumer:
-            await _handle(msg.value, parser, publisher)
+            await _handle(msg.value, parser, publisher, producer)
     finally:
         await consumer.stop()
+        await producer.stop()
         await publisher.close()
 
 
-async def _handle(payload: dict, parser: LLMParser, publisher: RedisPublisher) -> None:
+async def _handle(
+    payload: dict,
+    parser: LLMParser,
+    publisher: RedisPublisher,
+    producer: AIOKafkaProducer,
+) -> None:
     try:
         raw = RawArticle.model_validate(payload)
         parsed = await parser.parse(raw)
@@ -48,6 +61,18 @@ async def _handle(payload: dict, parser: LLMParser, publisher: RedisPublisher) -
             article_id = await save_article(session, parsed)
         if article_id:
             await publisher.publish(parsed, article_id)
+            # Forward compact payload to analysis pipeline
+            await producer.send_and_wait(
+                settings.kafka_topic_processed,
+                {
+                    "article_id": article_id,
+                    "title": parsed.title,
+                    "body": parsed.body,
+                    "summary": parsed.summary,
+                    "source": parsed.source,
+                    "published_at": parsed.published_at.isoformat() if parsed.published_at else None,
+                },
+            )
             logger.info("Processed article id=%s: %s", article_id, parsed.title[:80])
     except Exception:
         logger.exception("Failed to process message: %s", payload.get("url"))

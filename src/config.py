@@ -24,10 +24,16 @@ class Settings(BaseSettings):
 
     # Kafka topics
     kafka_topic_raw: str = "raw-articles"
+    kafka_topic_processed: str = "processed-articles"
     kafka_consumer_group: str = "firehose-processor"
+    kafka_analysis_group: str = "firehose-analysis"
 
     # Ingestion
     ingestion_interval_seconds: int = 60
+
+    # Analysis
+    analysis_concurrency: int = 20     # concurrent LLM calls per worker
+    analysis_batch_size: int = 50      # messages pulled per getmany() call
 
     # Logging
     log_level: str = "INFO"
