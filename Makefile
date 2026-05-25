@@ -3,7 +3,7 @@
         test lint lint-fix load-test clean
 
 help:
-	@echo "MarketPulse — development commands"
+	@echo "Financial Analysis & Automation — development commands"
 	@echo ""
 	@echo "  make install        Install Python + Node dependencies"
 	@echo "  make up             Start Kafka, Redis, PostgreSQL"

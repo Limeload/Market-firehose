@@ -1,8 +1,4 @@
-# MarketPulse
-
-[![CI](https://github.com/your-org/marketpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/marketpulse/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+# Financial Analysis & Automation
 
 A real-time financial news intelligence platform. Ingests articles from multiple sources, enriches them with LLM-extracted metadata, performs per-company sentiment analysis and event classification, and delivers everything via REST or live WebSocket stream.
 
@@ -73,8 +69,8 @@ Data flows through 4 independently scalable layers:
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/your-org/marketpulse.git
-cd marketpulse
+git clone https://github.com/your-org/financial-analysis-automation.git
+cd financial-analysis-automation
 cp .env.example .env
 # Edit .env — fill in THENEWSAPI_KEY and ANTHROPIC_API_KEY at minimum
 ```
@@ -136,7 +132,7 @@ All endpoints except `/health` require the `X-API-Key` header.
 | `GET` | `/stocks/{ticker}` | Stock detail + metrics |
 | `POST` | `/stocks/refresh` | Trigger NYSE universe refresh |
 
-**Swagger UI:** `http://localhost:8000/docs`  
+**Swagger UI:** `http://localhost:8000/docs`
 **ReDoc:** `http://localhost:8000/redoc`
 
 ---

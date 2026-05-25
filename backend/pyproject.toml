@@ -1,5 +1,5 @@
 [project]
-name = "marketpulse"
+name = "financial-analysis-automation"
 version = "0.1.0"
 description = "Real-time financial news intelligence platform"
 readme = "README.md"
@@ -18,9 +18,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-org/marketpulse"
-Issues   = "https://github.com/your-org/marketpulse/issues"
-Changelog = "https://github.com/your-org/marketpulse/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/your-org/financial-analysis-automation"
+Issues   = "https://github.com/your-org/financial-analysis-automation/issues"
+Changelog = "https://github.com/your-org/financial-analysis-automation/blob/main/CHANGELOG.md"
 
 [tool.ruff]
 line-length = 100

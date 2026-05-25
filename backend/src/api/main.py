@@ -10,7 +10,7 @@ from src.models.schemas import HealthResponse
 logging.basicConfig(level=settings.log_level)
 
 _DESCRIPTION = """
-MarketPulse ingests financial news from multiple sources, enriches each article
+Financial Analysis & Automation ingests financial news from multiple sources, enriches each article
 with LLM-extracted metadata (sector, named-entity tags, summary), and delivers them
 via REST or a live WebSocket stream.
 
@@ -66,13 +66,13 @@ _TAGS = [
 ]
 
 app = FastAPI(
-    title="MarketPulse",
+    title="Financial Analysis & Automation",
     description=_DESCRIPTION,
     version="0.1.0",
     openapi_tags=_TAGS,
     docs_url="/docs",
     redoc_url="/redoc",
-    contact={"name": "MarketPulse", "url": "https://github.com/your-org/marketpulse"},
+    contact={"name": "Financial Analysis & Automation", "url": "https://github.com/your-org/financial-analysis-automation"},
     license_info={"name": "MIT"},
 )
 

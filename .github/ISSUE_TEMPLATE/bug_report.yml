@@ -42,7 +42,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: MarketPulse version / commit
+      label: FA&A version / commit
     validations:
       required: true
 

@@ -30,7 +30,7 @@ export default function Sidebar() {
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent">
           <Zap className="h-4 w-4 text-white" />
         </div>
-        <span className="text-sm font-semibold tracking-tight text-primary">MarketPulse</span>
+        <span className="text-sm font-semibold tracking-tight text-primary">FA&amp;A</span>
       </div>
 
       {/* Nav */}
@@ -57,7 +57,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="border-t border-line px-4 py-3">
-        <p className="text-2xs text-muted">MarketPulse · open source</p>
+        <p className="text-2xs text-muted">FA&amp;A · open source</p>
       </div>
     </aside>
   );

@@ -1,9 +1,9 @@
 # Changelog
 
-All notable changes to MarketPulse are documented here.
+All notable changes to Financial Analysis & Automation are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-MarketPulse uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Financial Analysis & Automation uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
@@ -54,5 +54,5 @@ MarketPulse uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - pytest suite with async fixtures and mocked external services
 - Locust load test targeting 100 articles/min
 
-[Unreleased]: https://github.com/your-org/marketpulse/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/your-org/marketpulse/releases/tag/v0.1.0
+[Unreleased]: https://github.com/your-org/financial-analysis-automation/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/your-org/financial-analysis-automation/releases/tag/v0.1.0

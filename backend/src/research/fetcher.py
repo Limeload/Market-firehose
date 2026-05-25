@@ -16,7 +16,7 @@ from src.models.stock import Stock, StockMetrics
 logger = logging.getLogger(__name__)
 
 _NASDAQ_SCREENER = "https://api.nasdaq.com/api/screener/stocks"
-_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; market-firehose/1.0)"}
+_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; financial-analysis-automation/1.0)"}
 _METRICS_CONCURRENCY = 10  # yfinance requests in flight at once
 
 

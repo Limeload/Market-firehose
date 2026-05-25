@@ -1,4 +1,4 @@
-# Contributing to MarketPulse
+# Contributing to Financial Analysis & Automation
 
 Thank you for your interest in contributing! This document covers everything you need
 to get your environment up, understand the codebase, and get a pull request merged.
@@ -20,8 +20,8 @@ to get your environment up, understand the codebase, and get a pull request merg
 ## Development setup
 
 ```bash
-git clone https://github.com/your-org/marketpulse.git
-cd marketpulse
+git clone https://github.com/your-org/financial-analysis-automation.git
+cd financial-analysis-automation
 
 # Create a virtual environment
 python -m venv .venv && source .venv/bin/activate
@@ -59,7 +59,7 @@ connections needed. Keep it that way: do not add tests that require running infr
 
 ## Code style
 
-MarketPulse uses [Ruff](https://docs.astral.sh/ruff/) for linting.
+Financial Analysis & Automation uses [Ruff](https://docs.astral.sh/ruff/) for linting.
 
 ```bash
 make lint          # check

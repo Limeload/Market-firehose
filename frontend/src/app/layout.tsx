@@ -6,7 +6,7 @@ import Sidebar from "@/components/layout/Sidebar";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "MarketPulse",
+  title: "Financial Analysis & Automation",
   description: "Real-time financial news intelligence",
 };
 
